@@ -81,7 +81,10 @@ def get_distro():
         release = re.sub('\-.*\Z', '', ustr(platform.release()))
         osinfo = ['openbsd', release, '', 'openbsd']
     elif 'Linux' in platform.system():
-        osinfo = get_linux_distribution(0, 'alpine')
+        if os.environ.get('BR2_CONFIG', None) is not None:
+            osinfo = ["buildroot", "FFFF", '', '']
+        else:
+            osinfo = get_linux_distribution(0, 'alpine')
     else:
         try:
             # dist() removed in Python 3.7
@@ -116,7 +119,7 @@ def get_distro():
 
 AGENT_NAME = "WALinuxAgent"
 AGENT_LONG_NAME = "Azure Linux Agent"
-AGENT_VERSION = '2.2.31.2'
+AGENT_VERSION = '2.2.31.3'
 AGENT_LONG_VERSION = "{0}-{1}".format(AGENT_NAME, AGENT_VERSION)
 AGENT_DESCRIPTION = """
 The Azure Linux Agent supports the provisioning and running of Linux

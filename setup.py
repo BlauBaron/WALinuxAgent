@@ -73,7 +73,7 @@ def set_udev_files(data_files, dest="/etc/udev/rules.d/",
     data_files.append((dest, src))
 
 
-def get_data_files(name, version, fullname):
+def get_data_files(name, version, fullname, prefix=None):
     """
     Determine data_files according to distro name, version and init system type
     """
@@ -168,6 +168,12 @@ def get_data_files(name, version, fullname):
         if version.startswith("7.1"):
             # TODO this is a mitigation to systemctl bug on 7.1
             set_sysv_files(data_files)
+    elif name == 'buildroot':
+        set_bin_files(data_files, dest=os.path.join(prefix, "usr/sbin/"))
+        set_conf_files(data_files, dest=os.path.join(prefix, "etc/"))
+        set_logrotate_files(data_files, dest=os.path.join(prefix, "etc/logrotate.d/"))
+        set_udev_files(data_files, dest=os.path.join(prefix, "etc/udev/rules.d/"))
+        set_sysv_files(data_files, dest=os.path.join(prefix, "etc/rc.d/init.d/" ))
     else:
         # Use default setting
         set_bin_files(data_files)
@@ -194,6 +200,8 @@ class install(_install):
         self.lnx_distro_fullname = DISTRO_FULL_NAME
         self.register_service = False
         self.skip_data_files = False
+        self._prefix = self.get_prefix()
+        print(self._prefix)
 
     def finalize_options(self):
         _install.finalize_options(self)
@@ -201,7 +209,7 @@ class install(_install):
             return
 
         data_files = get_data_files(self.lnx_distro, self.lnx_distro_version,
-                                    self.lnx_distro_fullname)
+                                    self.lnx_distro_fullname, self._prefix)
         self.distribution.data_files = data_files
         self.distribution.reinitialize_command('install_data', True)
 
@@ -212,6 +220,16 @@ class install(_install):
             osutil.register_agent_service()
             osutil.stop_agent_service()
             osutil.start_agent_service()
+
+    def get_prefix(self):
+        print sys.argv
+        for option in sys.argv:
+            if ('prefix=' in option):
+                pth = option.split('=')[1]
+                return os.path.join(pth, os.path.pardir)
+        return None
+
+
 
 # Note to packagers and users from source.
 # In version 3.5 of Python distribution information handling in the platform
